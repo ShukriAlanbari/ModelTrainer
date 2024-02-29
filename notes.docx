@@ -1,0 +1,39 @@
+
+Missing Values:
+Some columns may have missing values, and ML algorithms generally require complete datasets. Strategies include filling missing values, removing rows, or imputing values.
+
+
+Data Types:
+ML algorithms often work with numerical data. If your data contains non-numeric types (e.g., categorical or text data), preprocessing steps are needed, such as encoding categorical variables or converting text to numerical representations.
+
+
+Outliers:
+Outliers can impact the performance of some ML models. Identifying and handling outliers may be necessary.
+
+
+Imbalanced Classes:
+In classification problems, imbalanced classes (significant differences in the number of instances for each class) can affect model performance. Techniques like resampling or using different evaluation metrics may be needed.
+
+
+Feature Scaling:
+Some ML algorithms are sensitive to the scale of features. Scaling features to a similar range (e.g., using Min-Max scaling or Standardization) may be necessary.
+
+
+Correlated Features:
+Highly correlated features can cause multicollinearity issues. Identifying and addressing correlated features can be important.
+
+
+Non-Numeric Labels:
+For classification problems, the labels should be numeric. If labels are non-numeric, encoding them into numeric values may be necessary.
+
+Non-Representative Data:
+
+The dataset may not be representative of the real-world scenario, leading to poor generalization. Collecting more diverse data or addressing biases may be necessary.
+
+Complex Relationships:
+Some ML models assume linear relationships between features and the target. For complex relationships, more advanced models or feature engineering may be required.
+
+Overfitting or Underfitting:
+Models may overfit (capturing noise in the training data) or underfit 
+(not capturing the underlying patterns). Tuning model parameters or using different models can address this.
+
