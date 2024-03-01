@@ -9,6 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 import joblib
 
 
@@ -92,15 +93,15 @@ def check_missing_values(data):
         return True, data
     
 def fill_missing_values(data):
-    print("Filling missing data...")
-    
+    print("Filling missing data using SimpleImputer...")
+
     for column in data.columns:
         if data[column].isnull().any():
             print(f"\nColumn: {column}")
-            
+
             if pd.api.types.is_numeric_dtype(data[column]):
                 print("Data type: Numeric")
-                
+
                 while True:
                     fill_strategy = input("Choose a filling strategy (mean, median, custom): ").lower()
 
@@ -111,18 +112,16 @@ def fill_missing_values(data):
                             break
                         except ValueError:
                             print("Invalid input. Please enter a valid numeric value.")
-                    elif fill_strategy == 'mean':
-                        data[column].fillna(data[column].mean(), inplace=True)
-                        break
-                    elif fill_strategy == 'median':
-                        data[column].fillna(data[column].median(), inplace=True)
+                    elif fill_strategy in ['mean', 'median']:
+                        imputer = SimpleImputer(strategy=fill_strategy)
+                        data[column] = imputer.fit_transform(data[[column]])
                         break
                     else:
                         print("Invalid strategy. Please choose a valid option.")
 
             else:
                 print("Data type: Categorical")
-                
+
                 while True:
                     fill_strategy = input("Choose a filling strategy (mode, custom): ").lower()
 
@@ -131,10 +130,13 @@ def fill_missing_values(data):
                         data[column].fillna(custom_value, inplace=True)
                         break
                     elif fill_strategy == 'mode':
-                        data[column].fillna(data[column].mode().iloc[0], inplace=True)
+                        imputer = SimpleImputer(strategy=fill_strategy)
+                        data[column] = imputer.fit_transform(data[[column]])
                         break
                     else:
                         print("Invalid strategy. Please choose a valid option.")
+
+    print("\nMissing data filled successfully.")
 
 def check_value_types(data):
     categorical_columns = data.select_dtypes(include=['object']).columns
@@ -196,20 +198,44 @@ def check_outliers(data,column):
 
 
 
-if __name__ == "__main__":
-    # Step 1: Get File Path
-    file_path, data = get_file_path()
 
-    # Step 2: Get ML Type
-    ml_type = get_ml_type()
 
-    # Step 3: Get Target Column
-    target_column = get_target_column(data, ml_type)
 
-    # Step 4: Check if data is ready
-    is_data_ready, data = check_missing_values(data)
+# Load a sample CSV file with missing values, categorical columns, and outliers
+sample_data = pd.DataFrame({
+    'Numeric_Column': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'Categorical_Column': ['A', 'B', 'A', 'C', 'B', 'C', 'A', 'B', 'C', 'A'],
+    'Target': [0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+})
 
-    if not is_data_ready:
-        # Step 5: Fill missing data
-        fill_missing_values(data)
+# Introduce some missing values
+sample_data.loc[[2, 5], 'Numeric_Column'] = None
 
+# Introduce an outlier
+sample_data.loc[9, 'Numeric_Column'] = 20
+
+# Display the sample data
+print("Sample Data:")
+print(sample_data)
+
+# Test the code
+file_path, data = get_file_path()
+
+# Choose 'regressor' or 'classifier'
+ml_type = get_ml_type()
+
+# Choose the target column
+target_column = get_target_column(data, ml_type)
+
+# Check missing values
+is_data_ready, data = check_missing_values(data)
+
+# Check value types and process them if needed
+is_data_ready, data = check_value_types(data)
+
+# Check outliers for the 'Numeric_Column'
+is_data_ready, data = check_outliers(data, 'Numeric_Column')
+
+# Display the final processed data
+print("Final Processed Data:")
+print(data)
