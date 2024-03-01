@@ -23,10 +23,10 @@ class UserInput:
         
 
     def run_all(self):
-        # self.get_file_path()
-        # self.ml_type = self.get_ml_type()
-        # self.target_column = self.get_target_column()
-        print("1")
+        self.get_file_path()
+        self.ml_type = self.get_ml_type()
+        self.target_column = self.get_target_column()
+        
 
     def get_file_path(self):
         while True:
@@ -82,14 +82,18 @@ class UserInput:
         
 
 class DataProcessor:
-    def __init__(self):
-        self.data = None
-        self.file_path = None
+    def __init__(self, data, file_path):
+        self.data = data
+        self.file_path = file_path
+        
+    def run_all(self):
+        self.check_missing_values()
+        self.check_value_types()
 
-    @staticmethod
-    def check_missing_values(data):
+    
+    def check_missing_values(self):
         # Check for missing values
-        if data.isnull().any().any():
+        if self.data.isnull().any().any():
             print("Data is not ready for machine learning:")
             print("1. Fill Missing Values")
             print("2. Choose Another CSV")
@@ -99,26 +103,27 @@ class DataProcessor:
 
                 if user_choice == '1':
                     # Allow the user to fill in missing values
-                    data = DataProcessor.fill_missing_values(data)
-                    print("Missing values filled. Data is now ready for machine learning.")
-                    return True, data
+                    self.data = self.fill_missing_values()
+                    return True
                 elif user_choice == '2':
-                    UserInput().run_all()  # Run UserInput to choose another CSV
-                    break
+                    user_input_instance = UserInput()  
+                    user_input_instance.run_all()
+                    data_processor_instance.run_all() 
+                    
                 else:
                     print("Invalid choice. Please enter either 1 or 2.")
         else:
-            return True, data
+            return True
 
-    @staticmethod
-    def fill_missing_values(data):
+    
+    def fill_missing_values(self):
         print("Filling missing data using SimpleImputer...")
 
-        for column in data.columns:
-            if data[column].isnull().any():
+        for column in self.data.columns:
+            if self.data[column].isnull().any():
                 print(f"\nColumn: {column}")
 
-                if pd.api.types.is_numeric_dtype(data[column]):
+                if pd.api.types.is_numeric_dtype(self.data[column]):
                     print("Data type: Numeric")
 
                     while True:
@@ -127,13 +132,13 @@ class DataProcessor:
                         if fill_strategy == 'custom':
                             custom_value = input("Enter the custom value to fill missing data: ")
                             try:
-                                data[column].fillna(float(custom_value), inplace=True)
+                                self.data[column].fillna(float(custom_value), inplace=True)
                                 break
                             except ValueError:
                                 print("Invalid input. Please enter a valid numeric value.")
                         elif fill_strategy in ['mean', 'median']:
                             imputer = SimpleImputer(strategy=fill_strategy)
-                            data[column] = imputer.fit_transform(data[[column]])
+                            self.data[column] = imputer.fit_transform(self.data[[column]])
                             break
                         else:
                             print("Invalid strategy. Please choose a valid option.")
@@ -146,32 +151,32 @@ class DataProcessor:
 
                         if fill_strategy == 'custom':
                             custom_value = input("Enter the custom value to fill missing data: ")
-                            data[column].fillna(custom_value, inplace=True)
+                            self.data[column].fillna(custom_value, inplace=True)
                             break
                         elif fill_strategy == 'mode':
                             imputer = SimpleImputer(strategy=fill_strategy)
-                            data[column] = imputer.fit_transform(data[[column]])
+                            self.data[column] = imputer.fit_transform(self.data[[column]])
                             break
                         else:
                             print("Invalid strategy. Please choose a valid option.")
 
         print("\nMissing data filled successfully.")
-        return data
+        return self.data
 
-    @staticmethod
-    def create_dummy_variables(data, categorical_columns):
+   
+    def create_dummy_variables(self, categorical_columns):
         print("Creating dummies using OneHotEncoder...")
-        encoder = OneHotEncoder(drop='first', sparse=False)
-        dummy_variables = encoder.fit_transform(data[categorical_columns])
+        encoder = OneHotEncoder(drop='first', sparse_output=False)
+        dummy_variables = encoder.fit_transform(self.data[categorical_columns])
 
-        data = pd.concat([data, pd.DataFrame(dummy_variables, columns=encoder.get_feature_names_out(categorical_columns))], axis=1)
+        self.data = pd.concat([self.data, pd.DataFrame(dummy_variables, columns=encoder.get_feature_names_out(categorical_columns))], axis=1)
 
         print("Dummy variables created successfully.")
-        return data
+        return self.data
 
-    @staticmethod
-    def check_value_types(data):
-        categorical_columns = data.select_dtypes(include=['object']).columns
+    
+    def check_value_types(self):
+        categorical_columns = self.data.select_dtypes(include=['object']).columns
 
         if not categorical_columns.empty:
             print("Data has categorical or string data and is not ready for machine learning:")
@@ -183,14 +188,17 @@ class DataProcessor:
                 user_choice = input("Enter your choice (1 or 2): ")
 
                 if user_choice == '1':
-                    return True, DataProcessor.create_dummy_variables(data, categorical_columns)
+                    self.create_dummy_variables(categorical_columns)
+                    return True
+                    
                 elif user_choice == '2':
-                    UserInput().run_all()  # Run UserInput to choose another CSV
+                    user_input_instance = UserInput()  
+                    user_input_instance.run_all()
+                    data_processor_instance.run_all()
                 else:
                     print("Invalid choice. Please enter 1 or 2.")
         else:
-            return True, data
-
+            return True
 
 
 
@@ -201,4 +209,5 @@ class DataProcessor:
 
 user_input_instance = UserInput()
 user_input_instance.run_all()
-# DataProcessor_instance = DataProcessor()
+data_processor_instance = DataProcessor(user_input_instance.data, user_input_instance.file_path)
+data_processor_instance.run_all()
