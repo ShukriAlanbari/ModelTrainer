@@ -1,3 +1,4 @@
+from model_trainer import Regressor, Classifier
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -88,6 +89,12 @@ class DataProcessor:
         self.check_value_types()
         self.scaler()
         self.data.to_csv(self.file_path, index=False)
+        if self.ml_type == "regressor":
+            regressor_instance = Regressor()
+            regressor_instance.run_all()
+        elif self.ml_type == "classifier":
+            classifier_instance = Classifier()
+            classifier_instance.run_all()
     
     def check_missing_values(self):
         os.system('cls' if os.name == 'nt' else 'clear')
