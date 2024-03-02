@@ -17,6 +17,7 @@ import os
 
 
 class Regressor:
+
     def __init__(self, data, target_column) -> None:
         self.data= data
         X = self.data.drop(columns=[target_column])
@@ -92,36 +93,30 @@ class Regressor:
         grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='neg_mean_squared_error')
         grid_search.fit(X_train, y_train)
 
-        
         best_model = grid_search.best_estimator_
         best_params = grid_search.best_params_
-
-        
         best_model.fit(X_train, y_train)
 
-        # Make predictions on the test set
         predictions = best_model.predict(X_test)
 
-        
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         mae = mean_absolute_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
-
-        print("*"* 10)
+        
+        print("")
+        print("*" * 10)
         print("Best Parameters:", best_params)
         print("")
-        print(f"MAE: {mae})
+        print(f"MAE: {mae}")
         print(f"RMSE: {rmse}")
         print(f"R2 Score: {r2}")
         print("*"* 10)
-
-      
-        print("The best model for this data is:", type(best_model).__name__)
         print("")
         
-
-
-
+       
+    
+        
+        
 
 class Classifier:
 
