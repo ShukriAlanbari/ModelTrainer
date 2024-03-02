@@ -1,4 +1,3 @@
-import main
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -79,14 +78,16 @@ class UserInput:
         
 
 class DataProcessor:
-    def __init__(self, data, file_path):
+    def __init__(self, data, file_path, ml_type):
         self.data = data
         self.file_path = file_path
+        self.ml_type = ml_type
         
     def run_all(self):
         self.check_missing_values()
         self.check_value_types()
-
+        self.scaler()
+        self.data.to_csv(self.file_path, index=False)
     
     def check_missing_values(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -119,13 +120,13 @@ class DataProcessor:
         print("")
         while True: 
             if copy_choice == '1':
-                # Save a copy of the original data
+                
                 self.save_copy()
-                # Read the data from the copy for filling missing values
-                self.data = pd.read_csv(self.file_path.replace(".", "(M)."))
+                
+                self.data = pd.read_csv(self.file_path)
                 break
             elif copy_choice == '2':
-                # Continue working with the original data
+                
                 break
             else:
                 print("Invalid choice. Please chose 1 > Yes or 2 > No")
@@ -225,21 +226,31 @@ class DataProcessor:
         new_file_path = f"{directory}\\{new_filename}"
 
         shutil.copyfile(self.file_path, new_file_path)
+        self.file_path = new_file_path
         print(f"Data copied to: {new_file_path}")
+        
    
     def scaler(self):
-        numeric_columns = self.data.select_dtypes(include=['float64', 'int64']).columns
+        if self.ml_type == "regressor":
+            scaling_choice= input("Do you want to scale the data?\ 1.Yes     2.No\n> ")
+            if scaling_choice == "1":
+                numeric_columns = self.data.select_dtypes(include=['float64', 'int64']).columns
 
-        if not numeric_columns.empty:
-            print("Scaling numeric features using StandardScaler...")
-            scaler = StandardScaler()
+                if not numeric_columns.empty:
+                    print("Scaling numeric features using StandardScaler...")
+                    scaler = StandardScaler()
 
-            self.data[numeric_columns] = scaler.fit_transform(self.data[numeric_columns])
+                    self.data[numeric_columns] = scaler.fit_transform(self.data[numeric_columns])
 
-            print("Numeric features scaled successfully.")
-            return self.data
+                    print("Numeric features scaled successfully.")
+                    return self.data
+                else:
+                    print("No numeric features to scale.")
+                    return self.data
+            elif scaling_choice == "2":
+                pass
+            else:
+                print("Invalid choice.Please choose 1.Yes  2.No")
         else:
-            print("No numeric features to scale.")
-            return self.data
-
+            pass
 
