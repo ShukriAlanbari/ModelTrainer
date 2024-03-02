@@ -1,4 +1,4 @@
-from data_processing import data, target_column
+
 import numpy as np
 import pandas as pd
 import matplotlib as plt

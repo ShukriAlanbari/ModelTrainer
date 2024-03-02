@@ -79,7 +79,8 @@ class UserInput:
         
 
 class DataProcessor:
-    def __init__(self, data, file_path, ml_type):
+    def __init__(self, data, file_path, ml_type, target_column):
+        self.target_column = target_column
         self.data = data
         self.file_path = file_path
         self.ml_type = ml_type
@@ -90,10 +91,10 @@ class DataProcessor:
         self.scaler()
         self.data.to_csv(self.file_path, index=False)
         if self.ml_type == "regressor":
-            regressor_instance = Regressor()
+            regressor_instance = Regressor(self.data, self.target_column)
             regressor_instance.run_all()
         elif self.ml_type == "classifier":
-            classifier_instance = Classifier()
+            classifier_instance = Classifier(self.data, self.target_column)
             classifier_instance.run_all()
     
     def check_missing_values(self):
@@ -114,7 +115,7 @@ class DataProcessor:
                 elif user_choice == '2':
                     user_input_instance = UserInput()  
                     user_input_instance.run_all()
-                    data_processor_instance.run_all() 
+                    DataProcessor.run_all() 
                     
                 else:
                     print("Invalid choice. Please enter either 1 or 2.")
