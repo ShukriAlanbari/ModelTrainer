@@ -83,7 +83,7 @@ class Regressor:
 
     def elastic_model(self):
         print("Training ElasticNet Model, please wait....")
-        elastic_model = ElasticNet(max_iter= 10000)
+        elastic_model = ElasticNet(max_iter= 1000)
 
         alphas = np.logspace(-4, 2, 7)
         l1_ratios = np.linspace(0, 1, num=11)  
