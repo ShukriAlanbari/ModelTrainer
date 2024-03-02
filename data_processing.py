@@ -1,12 +1,6 @@
 import main
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, confusion_matrix, classification_report
-from sklearn.linear_model import LinearRegression, Lasso, Ridge, ElasticNet, LogisticRegression
-from sklearn.svm import SVR, SVC
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -233,21 +227,19 @@ class DataProcessor:
         shutil.copyfile(self.file_path, new_file_path)
         print(f"Data copied to: {new_file_path}")
    
-   
+    def scaler(self):
+        numeric_columns = self.data.select_dtypes(include=['float64', 'int64']).columns
+
+        if not numeric_columns.empty:
+            print("Scaling numeric features using StandardScaler...")
+            scaler = StandardScaler()
+
+            self.data[numeric_columns] = scaler.fit_transform(self.data[numeric_columns])
+
+            print("Numeric features scaled successfully.")
+            return self.data
+        else:
+            print("No numeric features to scale.")
+            return self.data
 
 
-
-
-
-
-user_input_instance = UserInput()
-user_input_instance.run_all()
-data_processor_instance = DataProcessor(user_input_instance.data.copy(), user_input_instance.file_path)
-data_processor_instance.run_all()
-
-# Print the head of both the original and modified data to check the changes
-print("Original Data:")
-print(user_input_instance.data.head())
-
-print("\nModified Data:")
-print(data_processor_instance.data.head())
