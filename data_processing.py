@@ -12,6 +12,7 @@ import os
 
 
 class UserInput:
+   
     def __init__ (self):
         self.data = None
         self.file_path = None
@@ -79,6 +80,7 @@ class UserInput:
         
 
 class DataProcessor:
+   
     def __init__(self, data, file_path, ml_type, target_column):
         self.target_column = target_column
         self.data = data
@@ -99,7 +101,7 @@ class DataProcessor:
                 break
             else:
                 print("Invalid choice. Please chose 1.Yes or 2.No")
-                
+
     def run_all(self):
         self.check_missing_values()
         self.check_value_types()
@@ -261,10 +263,5 @@ class DataProcessor:
                 print("Invalid choice.Please choose 1.Yes  2.No")
         else:
             pass
-
-
-
-
-
 
 
