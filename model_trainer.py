@@ -23,7 +23,6 @@ class Regressor:
         y = self.data[target_column]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size= 0.3, random_state= 101)
         
-
     def run_all(self):
         self.linear_model()
         self.polynomial_model()
@@ -36,15 +35,17 @@ class Regressor:
         self.forest_regressor_model()
 
     def linear_model(self):
+        print("Training LR Model please wait....\n")
         lr_model = LinearRegression()
         lr_param_grid = {}
         self.run_regressor(lr_model, lr_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def polynomial_model(self):
        
+        print("Training Poly Model please wait....\n")
         poly_param_grid = {
-            "degree": list(range(1, 16)),
-            "include_bias": [False]
+            "polynomialfeatures__degree": list(range(1, 10)),
+            "polynomialfeatures__include_bias": [False]
         }
 
         
@@ -54,10 +55,12 @@ class Regressor:
         self.run_regressor(polynomial_model_pipe, poly_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def lasso_model(self):
+
+        print("Training Lasso Model please wait....\n")
         lasso_model = Lasso()
 
         
-        alphas = np.logspace(-4, 2, 7)  
+        alphas = np.logspace(-4, 1, 6)  
 
         lasso_param_grid = {
             "alpha": alphas
@@ -66,6 +69,7 @@ class Regressor:
         self.run_regressor(lasso_model, lasso_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def ridge_model(self):
+        print("Training ridge Model please wait....")
         pass
 
     def elastic_model(self):
@@ -84,8 +88,7 @@ class Regressor:
         pass
 
     def run_regressor(self, model, param_grid, X_train, y_train, X_test, y_test, cv=10):
-
-       
+        
         grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='neg_mean_squared_error')
         grid_search.fit(X_train, y_train)
 
@@ -104,14 +107,21 @@ class Regressor:
         mae = mean_absolute_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
 
-       
+        print("*"* 10)
         print("Best Parameters:", best_params)
-        print(f"MAE: {mae}")
+        print("")
+        print(f"MAE: {mae})
         print(f"RMSE: {rmse}")
         print(f"R2 Score: {r2}")
+        print("*"* 10)
 
       
         print("The best model for this data is:", type(best_model).__name__)
+        print("")
+        
+
+
+
 
 class Classifier:
 

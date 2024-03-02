@@ -84,7 +84,22 @@ class DataProcessor:
         self.data = data
         self.file_path = file_path
         self.ml_type = ml_type
-        
+        while True :  
+            copy_choice = input("Make a copy of the file?  1.Yes 2.No \n> ").lower()
+            print("")
+         
+            if copy_choice == '1':
+                
+                self.save_copy()
+                
+                self.data = pd.read_csv(self.file_path)
+                break
+            elif copy_choice == '2':
+                
+                break
+            else:
+                print("Invalid choice. Please chose 1.Yes or 2.No")
+                
     def run_all(self):
         self.check_missing_values()
         self.check_value_types()
@@ -98,7 +113,7 @@ class DataProcessor:
             classifier_instance.run_all()
     
     def check_missing_values(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
+        print("")
         # Check for missing values
         if self.data.isnull().any().any():
             print("Data is not ready for machine learning:")
@@ -115,31 +130,15 @@ class DataProcessor:
                 elif user_choice == '2':
                     user_input_instance = UserInput()  
                     user_input_instance.run_all()
-                    DataProcessor.run_all() 
+                    self.run_all() 
                     
                 else:
                     print("Invalid choice. Please enter either 1 or 2.")
         else:
             return True
-
     
     def fill_missing_values(self):
-        copy_choice = input("Make a copy of the file?  1. Yes 2. No \n> ").lower()
-        print("")
-        while True: 
-            if copy_choice == '1':
                 
-                self.save_copy()
-                
-                self.data = pd.read_csv(self.file_path)
-                break
-            elif copy_choice == '2':
-                
-                break
-            else:
-                print("Invalid choice. Please chose 1 > Yes or 2 > No")
-
-        
         print("Filling missing data using SimpleImputer...")
 
         for column in self.data.columns:
@@ -186,24 +185,12 @@ class DataProcessor:
         print("\nMissing data filled successfully.")
         return self.data
 
-   
-    def create_dummy_variables(self, categorical_columns):
-        print("Creating dummies using OneHotEncoder...")
-        encoder = OneHotEncoder(drop='first', sparse_output=False)
-        dummy_variables = encoder.fit_transform(self.data[categorical_columns])
-
-        self.data = pd.concat([self.data, pd.DataFrame(dummy_variables, columns=encoder.get_feature_names_out(categorical_columns))], axis=1)
-
-        print("Dummy variables created successfully.")
-        return self.data
-
-    
     def check_value_types(self):
-        categorical_columns = self.data.select_dtypes(include=['object']).columns
+        self.categorical_columns = self.data.select_dtypes(include=['object']).columns
 
-        if not categorical_columns.empty:
+        if not self.categorical_columns.empty:
             print("Data has categorical or string data and is not ready for machine learning:")
-            print("Columns with categorical data:", categorical_columns.tolist())
+            print("Columns with categorical data:", self.categorical_columns.tolist())
             print("1: Create Dummy Variables")
             print("2: Choose Another CSV")
 
@@ -211,18 +198,31 @@ class DataProcessor:
                 user_choice = input("Enter your choice (1 or 2): ")
 
                 if user_choice == '1':
-                    self.create_dummy_variables(categorical_columns)
+                    self.create_dummy_variables(self.categorical_columns)
                     return True
                     
                 elif user_choice == '2':
                     user_input_instance = UserInput()  
                     user_input_instance.run_all()
-                    data_processor_instance.run_all()
+                    self.run_all()
                 else:
                     print("Invalid choice. Please enter 1 or 2.")
         else:
             return True
 
+    def create_dummy_variables(self, categorical_columns):
+        print("Creating dummies using pd.get_dummies...")
+        
+        
+        for column in categorical_columns:
+            dummy_variables = pd.get_dummies(self.data[column], prefix=column, drop_first=True)
+            
+            
+            self.data = pd.concat([self.data.drop(column, axis=1), dummy_variables], axis=1)
+        
+        print("Dummy variables created successfully.")
+        return self.data
+    
     def save_copy(self):
         if '\\' in self.file_path:
             directory, filename = self.file_path.rsplit('\\', 1)
@@ -250,7 +250,7 @@ class DataProcessor:
 
                     self.data[numeric_columns] = scaler.fit_transform(self.data[numeric_columns])
 
-                    print("Numeric features scaled successfully.")
+                    print("Numeric features scaled successfully.\n")
                     return self.data
                 else:
                     print("No numeric features to scale.")
@@ -261,4 +261,10 @@ class DataProcessor:
                 print("Invalid choice.Please choose 1.Yes  2.No")
         else:
             pass
+
+
+
+
+
+
 
