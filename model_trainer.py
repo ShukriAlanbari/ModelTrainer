@@ -1,7 +1,6 @@
-
 import numpy as np
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, Lasso, Ridge, ElasticNet, LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVR, SVC
@@ -9,15 +8,15 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 import seaborn as sns
-from sklearn.metrics import plot_confusion_matrix
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 import joblib
 import shutil
 import os
+import time
 
 
 
@@ -25,8 +24,11 @@ class Regressor:
 
     def __init__(self, data, target_column) -> None:
         self.data= data
-        os.system('cls' if os.name == 'nt' else 'clear')
-        X = self.data.drop(columns=[target_column])
+    #   os.system('cls' if os.name == 'nt' else 'clear')
+        if isinstance(target_column, list):
+            X = self.data.drop(columns=target_column)
+        else:
+            X = self.data.drop(columns=[target_column])
         y = self.data[target_column]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size= 0.3, random_state= 101)
         
@@ -47,9 +49,8 @@ class Regressor:
         lr_model = LinearRegression()
         
         lr_param_grid = {
-            "fit_intercept": [True, False],  # Whether to calculate the intercept for this model
-            "normalize": [True, False],  # Whether to normalize the features before fitting the model
-            "copy_X": [True, False],  # Whether to copy X before fitting the model
+            "fit_intercept": [True, False],
+            "copy_X": [True, False],  
         }
 
         self.run_regressor(lr_model, lr_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -220,37 +221,35 @@ class Classifier:
 
     def __init__(self, data, target_column) -> None:
         self.data= data
-        os.system('cls' if os.name == 'nt' else 'clear')
-        X = self.data.drop(columns=[target_column])
+      # os.system('cls' if os.name == 'nt' else 'clear')
+        if isinstance(target_column, list):
+            X = self.data.drop(columns=target_column)
+        else:
+            X = self.data.drop(columns=[target_column])
         y = self.data[target_column]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size= 0.3, random_state= 101)
 
     def run_all(self):
-        self.logistic_classifier()
-        self.knn_classifier()
-        self.svc_classifier()
-        self.tree_classifier_model()
-        self.forest_classifier_model()
+        #self.logistic_classifier()
+        #self.knn_classifier()
+        #self.svc_classifier()
+        #self.tree_classifier_model()
+         self.forest_classifier_model()
 
     def logistic_classifier(self):
-        print("Training Logistic Regression Classifier, please wait....")
+        print("Training Logistic Regression Classifier, please wait....\n")
 
         logistics_model = LogisticRegression()
 
         logistics_param_grid = {
-            "penalty": ['l1', 'l2', 'elasticnet', 'none'],
-            "C": [0.001, 0.01, 0.1, 1, 5, 10, 20, 50, 100],
-            "fit_intercept": [True, False],
-            "max_iter": [50, 100, 200, 500, 1000],
-            "solver": ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'],
-            "class_weight": [None, 'balanced'],
-            "warm_start": [True, False],
-            "multi_class": ['auto', 'ovr', 'multinomial'],
-            "tol": [1e-4, 1e-3, 1e-2],
-            "dual": [True, False],
-            "random_state": [42, 101, 2022],
-        }
+        "C": [0.001, 0.01, 0.1, 1, 10],
+        "max_iter": [100, 500, 1000, 10000],
+        "solver": ['lbfgs', 'saga'],
+        "class_weight": [None, 'balanced'],
+        "multi_class": ['auto', 'ovr'],
+        "random_state": [101],}
 
+        
         self.run_classifier(logistics_model, logistics_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def knn_classifier(self):
@@ -265,8 +264,7 @@ class Classifier:
             "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
             "leaf_size": list(range(10, 41, 5)),
             "metric": ["euclidean", "manhattan", "minkowski"],
-            "n_jobs": [-1],
-        }
+            "n_jobs": [-1],}
 
         self.run_classifier(knn_model, knn_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
    
@@ -283,8 +281,7 @@ class Classifier:
             "coef0": [0.0, 0.1, 0.5, 1.0],
             "shrinking": [True, False],
             "tol": [1e-4, 1e-3, 1e-2],
-            "max_iter": [100, 500, 1000],
-        }
+            "max_iter": [100, 500, 1000, 10000],}
 
         self.run_classifier(svc_model, svc_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
         
@@ -299,9 +296,8 @@ class Classifier:
             "min_samples_split": [2, 5, 10, 20],
             "min_samples_leaf": [1, 2, 4, 8],
             "max_features": ["auto", "sqrt", "log2", None],
-            "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4],
-            "random_state": [101],
-        }
+            "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4]}
+        self.run_classifier(tree_model, tree_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def forest_classifier_model(self):
         print("Training Random Forest Classifier, please wait....")
@@ -309,21 +305,24 @@ class Classifier:
         forest_model = RandomForestClassifier()
 
         forest_param_grid = {
-            "n_estimators": [50, 100, 200, 300, 400, 500],
+            "n_estimators": [25, 50, 100, 200],
             "criterion": ["gini", "entropy"],
-            "max_depth": [None] + list(range(10, 101, 10)),
-            "min_samples_split": [2, 5, 10, 20],
-            "min_samples_leaf": [1, 2, 4, 8],
+            "max_depth": [None, 20, 50],
+            "min_samples_split": [2, 5, 10],
+            "min_samples_leaf": [1, 4, 8],
             "bootstrap": [True, False],
             "max_features": ["auto", "sqrt", "log2", None],
-            "class_weight": ["balanced", "balanced_subsample", None],
-            "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4],
-            "random_state": [101],
-        }
+            "class_weight": [None],}
 
         self.run_classifier(forest_model, forest_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def run_classifier(self, model, param_grid, X_train, y_train, X_test, y_test, cv=10):
+        y_train = y_train.values.ravel()
+        y_test = y_test.values.ravel()
+        
+        # Time 
+        start_time = time.time()
+
         # Grid Search
         grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='accuracy', n_jobs=-1)
         grid_search.fit(X_train, y_train)
@@ -346,16 +345,13 @@ class Classifier:
         confusion_mat = confusion_matrix(y_test, predictions)
         class_report = classification_report(y_test, predictions)
 
+        # Time
+        end_time = time.time()
+
         # Visual Report
         print("*" * 10)
         print(f"Classifier: {model.__class__.__name__}")
         print("Best Parameters:", best_params)
-
-        # Confusion Matrix Plot
-        plt.figure(figsize=(8, 6))
-        plot_confusion_matrix(best_model, X_test, y_test, cmap=plt.cm.Blues, display_labels=np.unique(y_test))
-        plt.title("Confusion Matrix")
-        plt.show()
 
         # Classification Report
         print("\nClassifier Evaluation Metrics:")
@@ -371,6 +367,20 @@ class Classifier:
         # Classification Report
         print("\nClassification Report:")
         print(class_report)
+
+        # Confusion Matrix Plot
+        plt.figure(figsize=(8, 6))
+        cm = confusion_matrix(y_test, predictions)
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+        plt.title(f"Confusion Matrix{model.__class__.__name__}")
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.show()
+
+        # Time taken for training
+        elapsed_time = end_time - start_time
+        print(f"Training took {elapsed_time:.2f} seconds.")
+
         print("*" * 10)
         print("")
 

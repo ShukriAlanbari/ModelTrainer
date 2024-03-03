@@ -111,6 +111,7 @@ class DataProcessor:
         elif self.ml_type == "classifier":
             classifier_instance = Classifier(self.data, self.target_column)
             classifier_instance.run_all()
+            pass
     
     def check_missing_values(self):
         print("")
@@ -182,7 +183,7 @@ class DataProcessor:
                         else:
                             print("Invalid strategy. Please choose a valid option.")
 
-        print("\nMissing data filled successfully.")
+        print("Missing data filled successfully.\n")
         return self.data
 
     def check_value_types(self):
@@ -212,15 +213,25 @@ class DataProcessor:
 
     def create_dummy_variables(self, categorical_columns):
         print("Creating dummies using pd.get_dummies...")
-        
-        
+
+        target_dummy_columns = []  
+
         for column in categorical_columns:
-            dummy_variables = pd.get_dummies(self.data[column], prefix=column, drop_first=True)
-            
-            
-            self.data = pd.concat([self.data.drop(column, axis=1), dummy_variables], axis=1)
-        
-        print("Dummy variables created successfully.")
+            if column == self.target_column:
+                # Handle the target column differently
+                dummy_variables = pd.get_dummies(self.data[column], prefix=f"{column}_dummy", drop_first=True)
+                target_dummy_columns.extend(dummy_variables.columns)
+                
+                self.data = pd.concat([self.data, dummy_variables], axis=1)
+                self.data = self.data.drop(column, axis=1)
+            else:
+                # Encode non-target categorical columns
+                dummy_variables = pd.get_dummies(self.data[column], prefix=column, drop_first=True)
+                self.data = pd.concat([self.data, dummy_variables], axis=1)
+                self.data = self.data.drop(column, axis=1)
+
+        self.target_column = target_dummy_columns[0]
+        print("Dummy variables created successfully.\n")
         return self.data
     
     def save_copy(self):

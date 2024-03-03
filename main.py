@@ -1,3 +1,8 @@
+from warnings import simplefilter
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+
+
 from data_processing import UserInput
 from data_processing import DataProcessor
 
@@ -13,6 +18,9 @@ from data_processing import DataProcessor
 
 
 if __name__ == "__main__":
+
+    simplefilter(action='ignore')
+    warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
     print("Welcome to the model training app...")
     
