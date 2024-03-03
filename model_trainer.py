@@ -10,6 +10,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, c
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 import joblib
 import shutil
 import os
@@ -37,64 +39,80 @@ class Regressor:
         self.forest_regressor_model()
 
     def linear_model(self):
-        print("Training LR Model please wait....")
+        print("Training Linear Regression Model, please wait....")
+        
         lr_model = LinearRegression()
-        lr_param_grid = {}
+        
+        lr_param_grid = {
+            "fit_intercept": [True, False],  # Whether to calculate the intercept for this model
+            "normalize": [True, False],  # Whether to normalize the features before fitting the model
+            "copy_X": [True, False],  # Whether to copy X before fitting the model
+        }
+
         self.run_regressor(lr_model, lr_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def polynomial_model(self):
-       
-        print("Training Poly Model please wait....")
+        print("Training Polynomial Regression Model, please wait....")
+        
         poly_param_grid = {
             "polynomialfeatures__degree": list(range(1, 10)),
-            "polynomialfeatures__include_bias": [False]
+            "polynomialfeatures__include_bias": [True, False],
+            "polynomialfeatures__interaction_only": [True, False]
         }
-
         
         polynomial_model_pipe = make_pipeline(PolynomialFeatures(), LinearRegression())
 
-        
         self.run_regressor(polynomial_model_pipe, poly_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def lasso_model(self):
-
-        print("Training Lasso Model please wait....")
+        print("Training Lasso Model, please wait....")
+        
         lasso_model = Lasso()
 
-        
         alphas = np.logspace(-4, 2, 7)  
-
         lasso_param_grid = {
-            "alpha": alphas
+            "alpha": alphas,
+            "fit_intercept": [True, False],  # Whether to calculate the intercept for this model
+            "normalize": [True, False],  # Whether to normalize the features before fitting the model
+            "precompute": [True, False],  # Whether to use precomputed Gram matrix for faster calculations
+            "positive": [True, False]  # Whether to constrain the coefficients to be non-negative
         }
         
         self.run_regressor(lasso_model, lasso_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def ridge_model(self):
         print("Training Ridge Model, please wait....")
+        
         ridge_model = Ridge()
 
         alphas = np.logspace(-4, 2, 7)
         ridge_param_grid = {
-            "alpha": alphas
+            "alpha": alphas,
+            "fit_intercept": [True, False],  
+            "normalize": [True, False], 
+            "solver": ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']  
         }
 
         self.run_regressor(ridge_model, ridge_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def elastic_model(self):
         print("Training ElasticNet Model, please wait....")
-        elastic_model = ElasticNet(max_iter= 1000)
+        
+        elastic_model = ElasticNet(max_iter=1000)
 
         alphas = np.logspace(-4, 2, 7)
         l1_ratios = np.linspace(0, 1, num=11)  
 
         elastic_param_grid = {
             "alpha": alphas,
-            "l1_ratio": l1_ratios
+            "l1_ratio": l1_ratios,
+            "fit_intercept": [True, False],  
+            "normalize": [True, False],  
+            "selection": ['cyclic', 'random']  
         }
 
         self.run_regressor(elastic_model, elastic_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
-
+    
     def svr_model(self):
         print("Training SVR Model, please wait....")
         
@@ -102,11 +120,16 @@ class Regressor:
         
         svr_param_grid = {
             "kernel": ['linear', 'poly', 'rbf', 'sigmoid'],
-            "C": [0.001,0.01,0.1, 1, 5, 10, 20, 50, 70, 100],
-            "epsilon": [0.01, 0.05, 0.1, 1.5, 0.2],
-            "gamma": ["auto", "scale"]
-    }
-    
+            "C": [0.001, 0.01, 0.1, 1, 5, 10, 20, 50, 100],
+            "epsilon": [0.01, 0.05, 0.1, 0.5, 1.0, 1.5, 2.0],
+            "gamma": ["auto", "scale"],
+            "degree": list(range(2, 6)),  
+            "coef0": [0.0, 0.1, 0.5, 1.0],  
+            "shrinking": [True, False],  
+            "tol": [1e-4, 1e-3, 1e-2],  
+            "max_iter": [100, 500, 1000]  
+        }
+        
         self.run_regressor(svr_model, svr_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def knn_regressor_model(self):
@@ -115,19 +138,55 @@ class Regressor:
         knn_model = KNeighborsRegressor()
         
         knn_param_grid = {
-            "n_neighbors": list(range(1,11)),
-            "weights": ["uniform", "distance"],
-            "p": [1, 2]  # 1 for Manhattan distance, 2 for Euclidean distance
-        }
+        "n_neighbors": list(range(1, 31, 2)),  
+        "weights": ["uniform", "distance"],
+        "p": [1, 2],  
+        "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
+        "leaf_size": list(range(10, 41, 5)),  
+        "metric": ["euclidean", "manhattan", "minkowski"]
+    }
         
         self.run_regressor(knn_model, knn_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
         
     def tree_regressor_model(self):
-        pass
+        print("Training Decision Tree Regressor Model, please wait....")
+
+        tree_model = DecisionTreeRegressor()
+
+        tree_param_grid = {
+        "max_depth": [None] + list(range(1, 101, 5)),
+        "min_samples_split": [2, 5, 10, 20, 30, 40, 50],
+        "min_samples_leaf": [1, 2, 4, 8, 16, 32],
+        "min_weight_fraction_leaf": [0.0, 0.1, 0.2, 0.3, 0.4],
+        "max_features": ["auto", "sqrt", "log2", None],
+        "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4],
+        "random_state": [101]  
+    }
+
+        self.run_regressor(tree_model, tree_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def forest_regressor_model(self):
-        pass
+        print("Training Random Forest Regressor Model, please wait....")
 
+        forest_model = RandomForestRegressor()
+
+        forest_param_grid = {
+                            "n_estimators": [50, 100, 200, 300, 400, 500],
+                            "max_depth": [None] + list(range(10, 101, 10)),
+                            "min_samples_split": [2, 5, 10, 20, 30, 40, 50],
+                            "min_samples_leaf": [1, 2, 4, 8, 16, 32],
+                            "bootstrap": [True, False],
+                            "max_features": ["auto", "sqrt", "log2", None],
+                            "criterion": ["mse", "mae"],
+                            "min_impurity_decrease": [0.0, 0.1, 0.2, 0.3, 0.4],
+                            "min_weight_fraction_leaf": [0.0, 0.1, 0.2, 0.3, 0.4],
+                            "max_samples": [None, 0.5, 0.7, 0.9],
+                            "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4],
+                            "warm_start": [True, False]
+                        }
+
+        self.run_regressor(forest_model, forest_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
+    
     def run_regressor(self, model, param_grid, X_train, y_train, X_test, y_test, cv=10):
         
         grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='neg_mean_squared_error', n_jobs= -1)
