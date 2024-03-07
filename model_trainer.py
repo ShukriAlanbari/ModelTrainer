@@ -24,7 +24,7 @@ class Regressor:
 
     def __init__(self, data, target_column) -> None:
         self.data= data
-    #   os.system('cls' if os.name == 'nt' else 'clear')
+       # os.system('cls' if os.name == 'nt' else 'clear')
         if isinstance(target_column, list):
             X = self.data.drop(columns=target_column)
         else:
@@ -32,6 +32,15 @@ class Regressor:
         y = self.data[target_column]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size= 0.3, random_state= 101)
         
+        self.model_dict = { 
+                "Regressor": [],
+                "Best_Parameters": [] ,
+                "MAE": [],
+                "RMSE": [],
+                "R2_Score": [],
+                "Training_Time": [],
+                }
+
     def run_all(self):
         self.linear_model()
         self.polynomial_model()
@@ -42,6 +51,7 @@ class Regressor:
         self. knn_regressor_model()
         self.tree_regressor_model()
         self.forest_regressor_model()
+        self.compare_regressor()
 
     def linear_model(self):
         print("Training Linear Regression Model, please wait....")
@@ -59,7 +69,7 @@ class Regressor:
         print("Training Polynomial Regression Model, please wait....")
         
         poly_param_grid = {
-            "polynomialfeatures__degree": list(range(1, 10)),
+            "polynomialfeatures__degree": list(range(1, 5)),
             "polynomialfeatures__include_bias": [True, False],
             "polynomialfeatures__interaction_only": [True, False]
         }
@@ -73,13 +83,15 @@ class Regressor:
         
         lasso_model = Lasso()
 
-        alphas = np.logspace(-4, 2, 7)  
+        alphas = np.logspace(-6, 4, 11)  
         lasso_param_grid = {
             "alpha": alphas,
-            "fit_intercept": [True, False],  # Whether to calculate the intercept for this model
-            "normalize": [True, False],  # Whether to normalize the features before fitting the model
-            "precompute": [True, False],  # Whether to use precomputed Gram matrix for faster calculations
-            "positive": [True, False]  # Whether to constrain the coefficients to be non-negative
+            "fit_intercept": [True, False],  
+            "precompute": [True, False], 
+            "positive": [True, False],
+            "selection": ['cyclic', 'random'],
+            "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000]
+              
         }
         
         self.run_regressor(lasso_model, lasso_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -89,12 +101,12 @@ class Regressor:
         
         ridge_model = Ridge()
 
-        alphas = np.logspace(-4, 2, 7)
+        alphas = np.logspace(-6, 4, 11)
         ridge_param_grid = {
             "alpha": alphas,
             "fit_intercept": [True, False],  
-            "normalize": [True, False], 
-            "solver": ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']  
+            "solver": ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga'],
+            "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000], 
         }
 
         self.run_regressor(ridge_model, ridge_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -102,17 +114,19 @@ class Regressor:
     def elastic_model(self):
         print("Training ElasticNet Model, please wait....")
         
-        elastic_model = ElasticNet(max_iter=1000)
+        elastic_model = ElasticNet()
 
         alphas = np.logspace(-4, 2, 7)
-        l1_ratios = np.linspace(0, 1, num=11)  
+        l1_ratios = np.linspace(0, 1, num=100)  
 
         elastic_param_grid = {
             "alpha": alphas,
             "l1_ratio": l1_ratios,
-            "fit_intercept": [True, False],  
-            "normalize": [True, False],  
-            "selection": ['cyclic', 'random']  
+            "fit_intercept": [True, False],
+            "selection": ['cyclic', 'random'],
+            "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000], 
+            "tol": [1e-4, 1e-3, 1e-2],
+            "positive": [True, False], 
         }
 
         self.run_regressor(elastic_model, elastic_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -131,7 +145,7 @@ class Regressor:
             "coef0": [0.0, 0.1, 0.5, 1.0],  
             "shrinking": [True, False],  
             "tol": [1e-4, 1e-3, 1e-2],  
-            "max_iter": [100, 500, 1000]  
+            "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000], 
         }
         
         self.run_regressor(svr_model, svr_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -142,12 +156,12 @@ class Regressor:
         knn_model = KNeighborsRegressor()
         
         knn_param_grid = {
-        "n_neighbors": list(range(1, 31, 2)),  
+        "n_neighbors": list(range(1, 51, 2)),  
         "weights": ["uniform", "distance"],
         "p": [1, 2],  
         "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
-        "leaf_size": list(range(10, 41, 5)),  
-        "metric": ["euclidean", "manhattan", "minkowski"]
+        "leaf_size": list(range(5, 55, 5)),  
+        "metric": ["euclidean", "manhattan", "minkowski"],
     }
         
         self.run_regressor(knn_model, knn_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -191,10 +205,14 @@ class Regressor:
 
         self.run_regressor(forest_model, forest_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
     
-    def run_regressor(self, model, param_grid, X_train, y_train, X_test, y_test, cv=10):
-        
+    def run_regressor(self,  model, param_grid, X_train, y_train, X_test, y_test, cv=10):
+                
+        # Time 
+        start_time = time.time()
+
         grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='neg_mean_squared_error', n_jobs= -1)
         grid_search.fit(X_train, y_train)
+
 
         best_model = grid_search.best_estimator_
         best_params = grid_search.best_params_
@@ -205,16 +223,64 @@ class Regressor:
         rmse = np.sqrt(mean_squared_error(y_test, predictions))
         mae = mean_absolute_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
+            
+        # Time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+            
         
+        self.model_dict["Regressor"].append(model.__class__.__name__)
+        self.model_dict["Best_Parameters"].append(best_params)
+        self.model_dict["MAE"].append(mae)
+        self.model_dict["RMSE"].append(rmse)
+        self.model_dict ["R2_Score"].append(r2)
+        self.model_dict["Training_Time"].append(elapsed_time)
         
+
         print("*" * 10)
+        print(f"Regressor: {model.__class__.__name__}")
         print("Best Parameters:", best_params)
         print(f"MAE: {mae}")
         print(f"RMSE: {rmse}")
         print(f"R2 Score: {r2}")
+        print(f"Training took {elapsed_time:.2f} seconds.")
         print("*"* 10)
         print("")
         
+         
+        return best_params, mae, rmse, r2, best_model
+    
+    def compare_regressor(self):
+        lowest_rmse = float('inf')
+        best_regressor_data = None
+        
+        # Iterate through the indices of the lists
+        for i in range(len(self.model_dict["Regressor"])):
+            rmse = self.model_dict["RMSE"][i]
+            
+            if rmse < lowest_rmse:
+                lowest_rmse = rmse
+                best_regressor_data = {
+                    "Regressor": self.model_dict["Regressor"][i],
+                    "Best_Parameters": self.model_dict["Best_Parameters"][i],
+                    "MAE": self.model_dict["MAE"][i],
+                    "RMSE": self.model_dict["RMSE"][i],
+                    "R2_Score": self.model_dict["R2_Score"][i],
+                    "Training_Time": self.model_dict["Training_Time"][i]
+                }
+
+        if best_regressor_data:
+            print("Recommended Regressor:")
+            print("*" * 10)
+            print(f"Regressor: {best_regressor_data['Regressor']}")
+            print("Best Parameters:", best_regressor_data['Best_Parameters'])
+            print(f"MAE: {best_regressor_data['MAE']}")
+            print(f"RMSE: {best_regressor_data['RMSE']}")
+            print(f"R2 Score: {best_regressor_data['R2_Score']}")
+            print(f"Training took {best_regressor_data['Training_Time']:.2f} seconds.")
+            print("*" * 10)
+        else:
+            print("No regressor data found.")
 
 
 class Classifier:
@@ -229,12 +295,24 @@ class Classifier:
         y = self.data[target_column]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size= 0.3, random_state= 101)
 
+         
+        self.model_dict = { 
+            "Classifier": [],
+            "Best_Parameters": [] ,
+            "Accuracy": [],
+            "Precision": [],
+            "Recall": [],
+            "F1_Score": [],
+            "Training_Time": [],
+            }
+        
     def run_all(self):
-        #self.logistic_classifier()
-        #self.knn_classifier()
-        #self.svc_classifier()
-        #self.tree_classifier_model()
-         self.forest_classifier_model()
+        self.logistic_classifier()
+        self.knn_classifier()
+        self.svc_classifier()
+        self.tree_classifier_model()
+        self.forest_classifier_model()
+        self.compare_classifier()
 
     def logistic_classifier(self):
         print("Training Logistic Regression Classifier, please wait....\n")
@@ -243,11 +321,12 @@ class Classifier:
 
         logistics_param_grid = {
         "C": [0.001, 0.01, 0.1, 1, 10],
-        "max_iter": [100, 500, 1000, 10000],
         "solver": ['lbfgs', 'saga'],
         "class_weight": [None, 'balanced'],
         "multi_class": ['auto', 'ovr'],
-        "random_state": [101],}
+        "random_state": [101],
+        "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000], 
+}
 
         
         self.run_classifier(logistics_model, logistics_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -258,13 +337,14 @@ class Classifier:
         knn_model = KNeighborsClassifier()
 
         knn_param_grid = {
-            "n_neighbors": list(range(1, 31, 2)),
+            "n_neighbors": list(range(1, 51, 2)),
             "weights": ["uniform", "distance"],
             "p": [1, 2],
             "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
             "leaf_size": list(range(10, 41, 5)),
             "metric": ["euclidean", "manhattan", "minkowski"],
-            "n_jobs": [-1],}
+            "n_jobs": [-1],
+            }
 
         self.run_classifier(knn_model, knn_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
    
@@ -274,14 +354,15 @@ class Classifier:
         svc_model = SVC()
 
         svc_param_grid = {
-            "C": [0.001, 0.01, 0.1, 1, 5, 10, 20],
+            "C": [0.001, 0.01, 0.1,0.5, 1, 5, 10, 20, 50, 100],
             "kernel": ['linear', 'poly', 'rbf', 'sigmoid'],
             "gamma": ["scale", "auto"],
             "degree": list(range(2, 6)),
             "coef0": [0.0, 0.1, 0.5, 1.0],
             "shrinking": [True, False],
             "tol": [1e-4, 1e-3, 1e-2],
-            "max_iter": [100, 500, 1000, 10000],}
+            "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000],
+            }
 
         self.run_classifier(svc_model, svc_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
         
@@ -292,11 +373,14 @@ class Classifier:
 
         tree_param_grid = {
             "criterion": ["gini", "entropy"],
-            "max_depth": [None] + list(range(5, 51, 5)),
-            "min_samples_split": [2, 5, 10, 20],
-            "min_samples_leaf": [1, 2, 4, 8],
+            "max_depth": [None] + list(range(5, 101, 5)),  
+            "min_samples_split": [2, 5, 10, 20, 30],  
+            "min_samples_leaf": [1, 2, 4, 8, 12],  
             "max_features": ["auto", "sqrt", "log2", None],
-            "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4]}
+            "ccp_alpha": [0.0, 0.1, 0.2, 0.3, 0.4],
+            "min_impurity_decrease": [0.0, 0.1, 0.2, 0.3, 0.4],  
+            "class_weight": [None, "balanced", "balanced_subsample"]
+            }
         self.run_classifier(tree_model, tree_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
     def forest_classifier_model(self):
@@ -305,14 +389,16 @@ class Classifier:
         forest_model = RandomForestClassifier()
 
         forest_param_grid = {
-            "n_estimators": [25, 50, 100, 200],
+            "n_estimators": [25, 50, 100, 200, 300],  
             "criterion": ["gini", "entropy"],
-            "max_depth": [None, 20, 50],
-            "min_samples_split": [2, 5, 10],
-            "min_samples_leaf": [1, 4, 8],
+            "max_depth": [None, 20, 50, 100],  
+            "min_samples_split": [2, 5, 10, 20],  
+            "min_samples_leaf": [1, 4, 8, 16],  
             "bootstrap": [True, False],
             "max_features": ["auto", "sqrt", "log2", None],
-            "class_weight": [None],}
+            "class_weight": [None, "balanced", "balanced_subsample"],
+            "max_samples": [None, 0.8, 0.9, 1.0]
+            }
 
         self.run_classifier(forest_model, forest_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
 
@@ -347,7 +433,19 @@ class Classifier:
 
         # Time
         end_time = time.time()
+        # Time taken for training
+        elapsed_time = end_time - start_time
+        print(f"Training took {elapsed_time:.2f} seconds.")
 
+
+        self.model_dict["Classifier"].append(model.__class__.__name__)
+        self.model_dict["Best_Parameters"].append(best_params)
+        self.model_dict["Accuracy"].append(accuracy)
+        self.model_dict["Precision"].append(precision)
+        self.model_dict["Recall"].append(recall)
+        self.model_dict["F1_Score"].append(f1)
+        self.model_dict["Training_Time"].append(elapsed_time)
+        
         # Visual Report
         print("*" * 10)
         print(f"Classifier: {model.__class__.__name__}")
@@ -377,11 +475,41 @@ class Classifier:
         plt.ylabel("Actual")
         plt.show()
 
-        # Time taken for training
-        elapsed_time = end_time - start_time
-        print(f"Training took {elapsed_time:.2f} seconds.")
+        
 
         print("*" * 10)
         print("")
+        
+    def compare_classifier(self):
+        highest_accuracy = 0
+        best_classifier_data = None
+        
+        # Iterate through the indices of the lists
+        for i in range(len(self.model_dict["Classifier"])):
+            accuracy = self.model_dict["Accuracy"][i]
+            
+            if accuracy > highest_accuracy:
+                highest_accuracy = accuracy
+                best_classifier_data = {
+                    "Classifier": self.model_dict["Classifier"][i],
+                    "Best_Parameters": self.model_dict["Best_Parameters"][i],
+                    "Accuracy": self.model_dict["Accuracy"][i],
+                    "Precision": self.model_dict["Precision"][i],
+                    "Recall": self.model_dict["Recall"][i],
+                    "F1_Score": self.model_dict["F1_Score"][i],
+                    "Training_Time": self.model_dict["Training_Time"][i]
+                }
 
-
+        if best_classifier_data:
+            print("Recommended Classifier:")
+            print("*" * 10)
+            print(f"Classifier: {best_classifier_data['Classifier']}")
+            print("Best Parameters:", best_classifier_data['Best_Parameters'])
+            print(f"Accuracy: {best_classifier_data['Accuracy']}")
+            print(f"Precision: {best_classifier_data['Precision']}")
+            print(f"Recall: {best_classifier_data['Recall']}")
+            print(f"F1 Score: {best_classifier_data['F1_Score']}")
+            print(f"Training took {best_classifier_data['Training_Time']:.2f} seconds.")
+            print("*" * 10)
+        else:
+            print("No classifier data found.")
