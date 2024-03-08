@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
-import joblib
+from joblib import dump
 import shutil
 import os
 import time
@@ -284,16 +284,18 @@ class Regressor:
 
 
 class Classifier:
-
-    def __init__(self, data, target_column) -> None:
+    
+    def __init__(self, data, target_column, file_path) -> None:
         self.data= data
+        self.file_path = file_path
       # os.system('cls' if os.name == 'nt' else 'clear')
+        
         if isinstance(target_column, list):
-            X = self.data.drop(columns=target_column)
+            self.X = self.data.drop(columns=target_column)
         else:
-            X = self.data.drop(columns=[target_column])
-        y = self.data[target_column]
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size= 0.3, random_state= 101)
+            self.X = self.data.drop(columns=[target_column])
+        self.y = self.data[target_column]
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size= 0.3, random_state= 101)
 
          
         self.model_dict = { 
@@ -306,13 +308,16 @@ class Classifier:
             "Training_Time": [],
             }
         
+        self.best_classifier_data = None
+
     def run_all(self):
         self.logistic_classifier()
         self.knn_classifier()
-        self.svc_classifier()
-        self.tree_classifier_model()
-        self.forest_classifier_model()
+        # self.svc_classifier()
+        # self.tree_classifier_model()
+        # self.forest_classifier_model()
         self.compare_classifier()
+        self.save_classifier()
 
     def logistic_classifier(self):
         print("Training Logistic Regression Classifier, please wait....\n")
@@ -321,11 +326,11 @@ class Classifier:
 
         logistics_param_grid = {
         "C": [0.001, 0.01, 0.1, 1, 10],
-        "solver": ['lbfgs', 'saga'],
-        "class_weight": [None, 'balanced'],
-        "multi_class": ['auto', 'ovr'],
-        "random_state": [101],
-        "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000], 
+        # "solver": ['lbfgs', 'saga'],
+        # "class_weight": [None, 'balanced'],
+        # "multi_class": ['auto', 'ovr'],
+        # "random_state": [101],
+        # "max_iter": [100, 1000, 10000, 100000, 1000000, 10000000], 
 }
 
         
@@ -338,12 +343,12 @@ class Classifier:
 
         knn_param_grid = {
             "n_neighbors": list(range(1, 51, 2)),
-            "weights": ["uniform", "distance"],
-            "p": [1, 2],
-            "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
-            "leaf_size": list(range(10, 41, 5)),
-            "metric": ["euclidean", "manhattan", "minkowski"],
-            "n_jobs": [-1],
+            # "weights": ["uniform", "distance"],
+            # "p": [1, 2],
+            # "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
+            # "leaf_size": list(range(10, 41, 5)),
+            # "metric": ["euclidean", "manhattan", "minkowski"],
+            # "n_jobs": [-1],
             }
 
         self.run_classifier(knn_model, knn_param_grid, self.X_train, self.y_train, self.X_test, self.y_test)
@@ -482,7 +487,6 @@ class Classifier:
         
     def compare_classifier(self):
         highest_accuracy = 0
-        best_classifier_data = None
         
         # Iterate through the indices of the lists
         for i in range(len(self.model_dict["Classifier"])):
@@ -511,5 +515,46 @@ class Classifier:
             print(f"F1 Score: {best_classifier_data['F1_Score']}")
             print(f"Training took {best_classifier_data['Training_Time']:.2f} seconds.")
             print("*" * 10)
+
+            self.best_classifier_data = best_classifier_data
+
         else:
             print("No classifier data found.")
+        return best_classifier_data
+
+    def save_classifier(self):
+        while True:
+            if not self.best_classifier_data:
+                print("No best classifier data available.")
+                return None
+            
+            print("Do you want to save the recommended model?")
+            user_input = input("Enter 'yes' or 'no': ").lower()
+        
+            if user_input == 'yes':
+                best_classifier = self.best_classifier_data['Classifier']
+                best_params = self.best_classifier_data['Best_Parameters']
+
+                best_model_class = globals()[best_classifier]
+                best_model = best_model_class(**best_params)
+                best_model.fit(self.X, self.y)
+
+                filename = input("Enter the filename to save the model (e.g., 'best_model.pkl'): ")
+                
+                # dump_path = os.path.join(self.file_path, filename)
+
+                dump(best_model, filename)
+                print(f"Trained model saved to {filename}")
+
+                return self.best_classifier_data
+            
+            elif user_input == "no":
+                print("Recommended model not saved.")
+                return 
+            else :
+                print("invalid choice please enter a valid choice.")
+                continue
+
+
+
+

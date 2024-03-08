@@ -106,10 +106,10 @@ class DataProcessor:
         self.scaler()
         self.data.to_csv(self.file_path, index=False)
         if self.ml_type == "regressor":
-            regressor_instance = Regressor(self.data, self.target_column)
+            regressor_instance = Regressor(self.data, self.target_column, self.file_path)
             regressor_instance.run_all()
         elif self.ml_type == "classifier":
-            classifier_instance = Classifier(self.data, self.target_column)
+            classifier_instance = Classifier(self.data, self.target_column, self.file_path)
             classifier_instance.run_all()
             
     
