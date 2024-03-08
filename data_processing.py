@@ -8,22 +8,24 @@ import shutil
 import os
 
 
-
+# Class to handle user input for model training.
 class UserInput:
-   
+
+    
     def __init__ (self):
-        # Initialize instance variables
         self.data = None
         self.file_path = None
         self.ml_type = None
         self.target_column = None
-        
+    
+    """Execute the sequence of methods to gather user input."""
     def run_all(self):
         # Execute the sequence of methods to gather user input
         self.get_file_path()
         self.ml_type = self.get_ml_type()
         self.target_column = self.get_target_column()
-        
+
+    """Prompt the user for a valid file path and load CSV data."""   
     def get_file_path(self):
         # Continuously prompt the user until a valid file path is provided
         while True:
@@ -36,6 +38,7 @@ class UserInput:
             except FileNotFoundError:
                 print("File not found. Please provide a valid file path.\n") # Inform the user of the error
 
+    """Prompt the user for the type of machine learning: 'regressor' or 'classifier'."""
     def get_ml_type(self):
         # Continuously prompt the user until a valid machine learning type is provided
         while True:
@@ -50,6 +53,7 @@ class UserInput:
             except ValueError as e:
                 print(e) # Print the error message if an exception occurs
 
+    """Prompt the user for the target column and validate its compatibility with the selected ML type."""
     def get_target_column(self):
         # Display available columns in the loaded dataset
         print("\nAvailable columns in the dataset:")
@@ -96,10 +100,21 @@ class UserInput:
                 print(e) # Print the error message if an exception occurs
         
 
+# Class to process data for machine learning.
 class DataProcessor:
-   
+    
+    """Initialize instance variables."""
     def __init__(self, data, file_path, ml_type, target_column):
-        # Initialize the instance variables with the provided parameters
+        """
+        Initialize the instance variables with the provided parameters.
+
+        Parameters:
+        - data: pandas DataFrame, the input dataset
+        - file_path: str, the file path of the input dataset
+        - ml_type: str, the type of machine learning task ('regressor' or 'classifier')
+        - target_column: str, the target column for machine learning
+        """
+
         self.target_column = target_column
         self.data = data
         self.file_path = file_path
@@ -125,7 +140,9 @@ class DataProcessor:
             else:
                 print("Invalid choice. Please chose 1.Yes or 2.No") # Inform the user about the invalid choice
 
+    """Run all data processing steps."""
     def run_all(self):
+
         # Check for missing values in the dataset
         self.check_missing_values()
         # Check and validate the data types of columns
@@ -144,8 +161,15 @@ class DataProcessor:
             # Create an instance of the Classifier class and run its methods
             classifier_instance = Classifier(self.data, self.target_column, self.file_path)
             classifier_instance.run_all()
-          
+
+    """Check for missing values in the dataset."""      
     def check_missing_values(self):
+        """
+        Check for missing values in the dataset.
+
+        Returns:
+        - bool: True if missing values have been handled, False otherwise.
+        """
         print("")
         # Check for missing values
         if self.data.isnull().any().any():
@@ -171,7 +195,15 @@ class DataProcessor:
         else:
             return True  # Indicate that there are no missing values in the dataset
     
+    """Fill missing values in the dataset."""
     def fill_missing_values(self): 
+        """
+        Fill missing values in the dataset.
+
+        Returns:
+        - pd.DataFrame: The updated dataset after filling missing values.
+        """
+
         # Inform the user about the process of filling missing data     
         print("Filling missing data using SimpleImputer...")
 
@@ -229,8 +261,16 @@ class DataProcessor:
         # Inform the user that missing data has been filled successfully
         print("Missing data filled successfully.\n")
         return self.data    # Return the updated dataset
-
+    
+    """Check and validate the data types of columns."""
     def check_value_types(self):
+        """
+        Check and validate the data types of columns.
+
+        Returns:
+        - bool: True if categorical columns have been processed, False otherwise.
+        """
+
         # Identify columns with categorical data
         self.categorical_columns = self.data.select_dtypes(include=['object']).columns
 
@@ -262,7 +302,18 @@ class DataProcessor:
         else:
             return True # Indicate that there are no categorical columns in the dataset
 
+    """Create dummy variables for categorical columns."""
     def create_dummy_variables(self, categorical_columns):
+        """
+        Create dummy variables for categorical columns.
+
+        Parameters:
+        - categorical_columns: list, the list of categorical columns
+
+        Returns:
+        - pd.DataFrame: The updated dataset after creating dummy variables.
+        """
+
         # Inform the user about the process of creating dummy variables
         print("Creating dummies using pd.get_dummies...")
 
@@ -297,7 +348,17 @@ class DataProcessor:
         print("Dummy variables created successfully.\n")
         return self.data    # Return the updated dataset
     
+    """Save a copy of the original file."""
     def save_copy(self):
+        """
+        Save a copy of the original file.
+
+        Creates a new file with the same content as the original file.
+
+        Returns:
+        - None
+        """
+
         # Check if the file path contains a directory structure
         if '\\' in self.file_path:
             # If yes, split the file path into directory and filenam
@@ -319,8 +380,19 @@ class DataProcessor:
         self.file_path = new_file_path
         # Inform the user about the successful copy operation
         print(f"Data copied to: {new_file_path}")
-        
+
+    """Scale numeric features using StandardScaler if the machine learning type is "regressor"."""
     def scaler(self):
+        """
+        Scale numeric features using StandardScaler if the machine learning type is "regressor".
+
+        This method prompts the user for scaling preferences and applies StandardScaler to the numeric features
+        if the user chooses to scale. It then informs the user about the success of the scaling operation.
+
+        Returns:
+        - pd.DataFrame: The updated dataset after scaling numeric features if applicable, or the original dataset.
+        """
+        
         # Check if the ML type is "regressor"
         if self.ml_type == "regressor":
             # Prompt the user for scaling choice
